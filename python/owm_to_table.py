@@ -2,9 +2,9 @@ import csv
 from datetime import datetime
 
 import requests
-
-# url = 'https://api.openweathermap.org/data/2.5/onecall?lat=-27.36649&lon=-55.89411&mode=metric&exclude={current,minutely,daily,alerts}&lang=es&appid=32a020e350d198b03a3acfbcdd355310'
-url = 'https://api.openweathermap.org/data/2.5/onecall?lat=-26.22701&lon=-54.01472&mode=metric&exclude={current,minutely,daily,alerts}&lang=es&appid=32a020e350d198b03a3acfbcdd355310'
+# API sin ID!
+# url = 'https://api.openweathermap.org/data/2.5/onecall?lat=-27.36649&lon=-55.89411&mode=metric&exclude={current,minutely,daily,alerts}&lang=es&appid='
+url = 'https://api.openweathermap.org/data/2.5/onecall?lat=-26.22701&lon=-54.01472&mode=metric&exclude={current,minutely,daily,alerts}&lang=es&appid='
 
 resp = requests.get(url=url)  # , params=params)
 data = resp.json()  # Check the JSON Response Content documentation below
