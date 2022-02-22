@@ -2,6 +2,10 @@ import csv
 from datetime import datetime
 
 import requests
+import geopandas as gpd
+import pandas as pd
+
+incendios =
 # API sin ID!
 # url = 'https://api.openweathermap.org/data/2.5/onecall?lat=-27.36649&lon=-55.89411&mode=metric&exclude={current,minutely,daily,alerts}&lang=es&appid='
 url = 'https://api.openweathermap.org/data/2.5/onecall?lat=-26.22701&lon=-54.01472&mode=metric&exclude={current,minutely,daily,alerts}&lang=es&appid='

@@ -18,10 +18,10 @@ def get_data(url):
     csv_file = open(f'./datos/incendios-{file_name}.csv', 'wb')
     csv_file.write(data)
     csv_file.close()  # todo puede retornar el content y ya ir para geodataframe
-    return {
-        'data': data,
-        file_name: file_name
-    }
+    # return {
+    #     'data': data,
+    #     file_name: file_name
+    # }
 
 
 def filter_misiones(to_filter):
@@ -33,7 +33,7 @@ def filter_misiones(to_filter):
 
 
 def clean_data(content_dict):
-    # content_dict = "./incendios-modis-c6.1.csv"
+    # content_dict = "./datos/incendios-modis-c6.1.csv"
     from pandas import DataFrame, read_csv
     from geopandas import GeoDataFrame
     incendios_df = read_csv(content_dict)
@@ -43,15 +43,18 @@ def clean_data(content_dict):
         incendios_df.latitude),
                                 crs=4326)
     incendios_cleaned = filter_misiones(incendios_df)
-    file_name = ''.join(content_dict.split('-')[1:]).split('.')[0]
-    incendios_cleaned.to_file(f"./datos/incendios_misiones{file_name}.geojson")
+    if not incendios_cleaned.empty:
+        file_name = ''.join(content_dict.split('-')[1:]).split('.')[0]
+        incendios_cleaned.to_file(f"./datos/incendios_misiones{file_name}.geojson")
 
 
 def main():
     from glob import glob
-    list(map(get_data, urls))
+    # list(map(get_data, urls))
+    [get_data(i) for i in urls]
     results = glob('./datos/*.csv')
-    list(map(clean_data, results))
+    # list(map(clean_data, results))
+    [clean_data(i) for i in results]
 
 
 if __name__ == '__main__':
