@@ -1,9 +1,14 @@
-from decouple import config
-import requests
+import io
+from datetime import datetime
+
 import geopandas as gpd
+import pandas as pd
+# from decouple import config
+import requests
+from geopandas import GeoDataFrame
+from geopandas import read_file  # todo confirmar se precisa importar
 
-
-NASA_KEY = config('NASA_KEY', default='')
+# NASA_KEY = config('NASA_KEY', default='')
 
 urls = ['https://firms.modaps.eosdis.nasa.gov/data/active_fire/modis-c6.1/csv/MODIS_C6_1_South_America_24h.csv',
         'https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_South_America_24h.csv',
@@ -11,51 +16,43 @@ urls = ['https://firms.modaps.eosdis.nasa.gov/data/active_fire/modis-c6.1/csv/MO
 
 
 def get_data(url):
+    """
+    Request data from fire database, select few columns and return as DataFrame
+    :param url:
+    :return: pd.DataFrame
+    """
     url_content = requests.get(url)
     file_name = url.split('/')[5]
-    data = url_content.content
-    csv_file = open(f'./datos/incendios-{file_name}.csv', 'wb')
-    csv_file.write(data)
-    csv_file.close()  # todo puede retornar el content y ya ir para geodataframe
-    # return {
-    #     'data': data,
-    #     file_name: file_name
-    # }
+    url_data = url_content.content
+    raw_data = pd.read_csv(io.StringIO(url_data.decode('utf-8')))
+    raw_data[['latitude', 'longitude', 'acq_date', 'acq_time', 'satellite', 'confidence']]
+    raw_data['source'] = file_name
+    return raw_data
 
 
 def filter_misiones(to_filter):
-    from geopandas import read_file, sjoin
-    MISIONES = read_file("./datos/misiones.geojson")
-    # incendios_misiones_df = incendios_df.intersects(misiones)
-    data_misiones = to_filter.sjoin(MISIONES)
+    misiones = read_file("./datos/misiones.geojson")
+    data_misiones = to_filter.sjoin(misiones)
     return data_misiones
 
 
-def clean_data(content_dict):
-    # content_dict = "./datos/incendios-modis-c6.1.csv"
-    from pandas import DataFrame, read_csv
-    from geopandas import GeoDataFrame
-    incendios_df = read_csv(content_dict)
-    # incendios_df = DataFrame(content_dict.get('data'))
+def clean_data(incendios_df):
     incendios_df = GeoDataFrame(data=incendios_df,
                                 geometry=gpd.points_from_xy(
                                     incendios_df.longitude,
                                     incendios_df.latitude),
                                 crs=4326)
     incendios_cleaned = filter_misiones(incendios_df)
-    if not incendios_cleaned.empty:
-        file_name = ''.join(content_dict.split('-')[1:]).split('.')[0]
-        incendios_cleaned.to_file(f"./datos/incendios_misiones{file_name}.geojson")
+    incendios_cleaned = incendios_cleaned.reset_index()
+    return incendios_cleaned
 
 
-def main():
-    from glob import glob
-    # list(map(get_data, urls))
-    [get_data(i) for i in urls]
-    results = glob('./datos/*.csv')
-    # list(map(clean_data, results))
-    [clean_data(i) for i in results]
+def get_misiones_data():
+    df = pd.concat([get_data(i) for i in urls])
+    df_cleaned = clean_data(df)
+    if not df_cleaned.empty:
+        df_cleaned.to_file(f'./datos/incendios_misiones_{datetime.today().date()}.geojson')
 
 
 if __name__ == '__main__':
-    main()
+    get_misiones_data()

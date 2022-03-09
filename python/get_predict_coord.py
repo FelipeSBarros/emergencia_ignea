@@ -12,7 +12,7 @@ def predict_fire_geopy():
 
     lat2, lon2 = destination.latitude, destination.longitude
 
-    # TODO outr possibilidade
+    # TODO outra possibilidade
 
     # # distance.distance(unit=15).destination((lat,lon),bering)
     # # Exemples
@@ -24,15 +24,16 @@ def prodict_fire_math():
     import math
 
     R = 6378.1  # Radius of the Earth
-    brng = 1.57  # Bearing is 90 degrees converted to radians.
+    # brng = 1.57  # Bearing is 90 degrees converted to radians.
     d = 15  # Distance in km
 
     # lat2  52.20444 - the lat result I'm hoping for
     # lon2  0.36056 - the long result I'm hoping for.
-
-    lat1 = math.radians(52.20472)  # Current lat point converted to radians
-    lon1 = math.radians(0.14056)  # Current long point converted to radians
-
+    # lat = -26.9998
+    # lon = -54.7873
+    lat1 = math.radians(lat)  # Current lat point converted to radians
+    lon1 = math.radians(lon)  # Current long point converted to radians
+    # brng = 357
     lat2 = math.asin(math.sin(lat1) * math.cos(d / R) +
                      math.cos(lat1) * math.sin(d / R) * math.cos(brng))
 

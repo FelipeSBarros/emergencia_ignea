@@ -2,13 +2,30 @@ from datetime import datetime
 from glob import glob
 
 import geopandas as gpd
-import matplotlib.pyplot as plt
 import pandas as pd
 import requests
 from decouple import config
 
 OWM_KEY = config('OWM_KEY')
-incendios = glob('./datos/*.geojson')
+incendios = glob(f'./datos/incendios_misiones_{datetime.today().date()}.geojson')[0]
+
+
+def pred_new_coords(lat, lon, d, wind_deg):
+    """
+
+    """
+    import math
+    R = 6378.1  # Radius of the Earth
+    # d = 15  # Distance in km  # todo confirmar isso
+    lat1 = math.radians(lat)  # Current lat point converted to radians
+    lon1 = math.radians(lon)  # Current long point converted to radians
+    lat2 = math.asin(math.sin(lat1) * math.cos(d / R) +
+                     math.cos(lat1) * math.sin(d / R) * math.cos(wind_deg))
+
+    lon2 = lon1 + math.atan2(math.sin(wind_deg) * math.sin(d / R) * math.cos(lat1),
+                             math.cos(d / R) - math.sin(lat1) * math.sin(lat2))
+
+    return {'lat': math.degrees(lat2), 'lon': math.degrees(lon2)}
 
 
 def pred_incendio(weather_data):
@@ -17,25 +34,45 @@ def pred_incendio(weather_data):
     - converter fecha,
     - converter hora,
     - acceder a direccion, velocidad, rafaga del viento y humedad
-    convirte el df en gdf y transforma en buffer considerando velocidad de viento; # todo cambiar para velocidad + hora transcurrida
+    convirte el df en gdf y transforma en buffer considerando velocidad de viento;
    retorna
     """
+
     weather_df = pd.DataFrame(
         columns=['fecha', 'hora', 'viento_dir', 'viento_vel', 'viento_rafaga', 'humedad'])
     # weather_data = data
     for index, hora in enumerate(weather_data.get("hourly")[0:24]):  # 24 horas de previsao
         # hora = data.get("hourly")[0]
+        # index = 0
         # incendios_pred_df.loc[ind, ['temp']] = round(hora.get('temp') - 273.15, 2)
-        weather_df = weather_df.append({  # TODO uodate removing warning
-            'fecha': datetime.utcfromtimestamp(hora.get('dt')).strftime('%Y-%m-%d'),
-            'hora': datetime.utcfromtimestamp(hora.get('dt')).strftime('%H:%M:%S'),
-            'viento_dir': hora.get('deg'),
-            'viento_vel': hora.get('wind_speed') * 3600,  # todo considerar desplazamiento a cada hora/itercao
-            'viento_rafaga': hora.get('wind_gust') * 3600,  # todo idem
-            'humedad': hora.get('humidity'),
-            'lon': data['lon'],
-            'lat': data['lat'],
-        }, ignore_index=True)
+        if index > 0:
+            data.update(
+                pred_new_coords(
+                    lon=data.get('lon'),
+                    lat=data.get('lat'),
+                    d=3.600,
+                    wind_deg=hora.get('wind_deg')
+                ))
+
+        weather_df = pd.concat(
+            [
+                weather_df,
+                pd.DataFrame([
+                    {
+                        'fecha': datetime.utcfromtimestamp(hora.get('dt')).strftime('%Y-%m-%d'),
+                        'hora': datetime.utcfromtimestamp(hora.get('dt')).strftime('%H:%M:%S'),
+                        'viento_dir': hora.get('wind_deg'),
+                        'viento_vel': hora.get('wind_speed') * 3600,
+                        # todo considerar desplazamiento a cada hora/itercao
+                        'viento_rafaga': hora.get('wind_gust') * 3600,  # todo idem
+                        'humedad': hora.get('humidity'),
+                        'lon': data['lon'],
+                        'lat': data['lat'],
+                    }
+                ])
+            ]
+        )
+
     weather_gdf = gpd.GeoDataFrame(weather_df,
                                    geometry=gpd.points_from_xy(weather_df['lon'], weather_df['lat'], crs="EPSG:4326"))
     weather_gdf['geometry_buffer'] = weather_gdf.to_crs("EPSG:5349").buffer(
@@ -44,9 +81,8 @@ def pred_incendio(weather_data):
     return gpd.tools.collect(weather_gdf['geometry_buffer'])
 
 
-for incendio in incendios:
-    # incendio = incendios[0]
-    incendios_df = gpd.read_file(incendio)  # todo pensar em fazer append dos dfs
+def predict_area():
+    incendios_df = gpd.read_file(incendios)
     incendios_pred_df = incendios_df.copy()
     incendios_pred_df['buffer_pred'] = None
     for ind in incendios_pred_df.index:
@@ -58,16 +94,11 @@ for incendio in incendios:
         data = resp.json()
         incendios_pred_df['buffer_pred'][ind] = pred_incendio(data)
 
-incendios_pred_df = incendios_pred_df.set_geometry('buffer_pred')
-for geometry in incendios_pred_df.geometry:
-    print(geometry)
-# incendios_pred_df.to_file('./datos/incendios_pred.shp')  # todo solve this problem
-fig, ax = plt.subplots()
-incendios_pred_df.plot(ax=ax, facecolor=None, edgecolor="black")
-incendios_pred_df['geometry'].plot(ax=ax, markersize=.5, color='black')
-plt.show();
-
-fig, ax = plt.subplots()
-incendios_pred_df.loc[[ind]].plot(ax=ax, edgecolor="black")
-incendios_pred_df.loc[[ind], 'geometry'].plot(ax=ax, color='black')
-plt.show();
+    incendios_pred_df = incendios_pred_df.set_geometry('buffer_pred')
+    incendios_pred_df = incendios_pred_df.drop('geometry', 1)
+    incendios_pred_df.to_file(f'prediccion_incendios{datetime.today().date()}.geojson')
+    # import matplotlib.pyplot as plt
+    # fig, ax = plt.subplots()
+    # incendios_pred_df.plot(ax=ax, facecolor=None, edgecolor="black")
+    # incendios_pred_df['geometry'].plot(ax=ax, markersize=.5, color='black')
+    # plt.show();
