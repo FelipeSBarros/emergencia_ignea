@@ -16,3 +16,11 @@ El archivo [`request_data.py`](./python/request_data.py) es responsable por ejec
  
 1. Ejecuta [script bash](./bash/DatosNASA.sh) para acceder a los datos de incendio de distintos satelites de la NASA e identificar aquellos que están en el [boundingbox](https://en.wikipedia.org/wiki/Minimum_bounding_box) de la provincia de Misiones;  
 2. Ejecuta [script js](./js/2nd_step_process.js) para identificar los incendios en la provincia de Misiones;  
+
+# Deploy
+
+[emergenciaignea.herokuapp.com](https://emergenciaignea.herokuapp.com)
+
+```python
+heroku run python request_data.py
+```

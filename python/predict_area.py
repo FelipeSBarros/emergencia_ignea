@@ -1,11 +1,12 @@
-import csv
 from datetime import datetime
 from glob import glob
-import requests
+
 import geopandas as gpd
-import pandas as pd
-from decouple import config
 import matplotlib.pyplot as plt
+import pandas as pd
+import requests
+from decouple import config
+
 OWM_KEY = config('OWM_KEY')
 incendios = glob('./datos/*.geojson')
 
@@ -29,13 +30,14 @@ def pred_incendio(weather_data):
             'fecha': datetime.utcfromtimestamp(hora.get('dt')).strftime('%Y-%m-%d'),
             'hora': datetime.utcfromtimestamp(hora.get('dt')).strftime('%H:%M:%S'),
             'viento_dir': hora.get('deg'),
-            'viento_vel': hora.get('wind_speed')*3600,  # todo considerar desplazamiento a cada hora/itercao
-            'viento_rafaga': hora.get('wind_gust')* 3600,  # todo idem
+            'viento_vel': hora.get('wind_speed') * 3600,  # todo considerar desplazamiento a cada hora/itercao
+            'viento_rafaga': hora.get('wind_gust') * 3600,  # todo idem
             'humedad': hora.get('humidity'),
             'lon': data['lon'],
             'lat': data['lat'],
         }, ignore_index=True)
-    weather_gdf = gpd.GeoDataFrame(weather_df, geometry=gpd.points_from_xy(weather_df['lon'], weather_df['lat'], crs="EPSG:4326"))
+    weather_gdf = gpd.GeoDataFrame(weather_df,
+                                   geometry=gpd.points_from_xy(weather_df['lon'], weather_df['lat'], crs="EPSG:4326"))
     weather_gdf['geometry_buffer'] = weather_gdf.to_crs("EPSG:5349").buffer(
         distance=weather_gdf['viento_vel'].astype(float), resolution=16).to_crs("EPSG:4326")
     # single feature with multipart geometries
@@ -57,7 +59,9 @@ for incendio in incendios:
         incendios_pred_df['buffer_pred'][ind] = pred_incendio(data)
 
 incendios_pred_df = incendios_pred_df.set_geometry('buffer_pred')
-
+for geometry in incendios_pred_df.geometry:
+    print(geometry)
+# incendios_pred_df.to_file('./datos/incendios_pred.shp')  # todo solve this problem
 fig, ax = plt.subplots()
 incendios_pred_df.plot(ax=ax, facecolor=None, edgecolor="black")
 incendios_pred_df['geometry'].plot(ax=ax, markersize=.5, color='black')
