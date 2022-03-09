@@ -96,7 +96,7 @@ def predict_area():
 
     incendios_pred_df = incendios_pred_df.set_geometry('buffer_pred')
     incendios_pred_df = incendios_pred_df.drop('geometry', 1)
-    incendios_pred_df.to_file(f'prediccion_incendios{datetime.today().date()}.geojson')
+    incendios_pred_df.to_file(f'.datos/prediccion_incendios{datetime.today().date()}.geojson')
     # import matplotlib.pyplot as plt
     # fig, ax = plt.subplots()
     # incendios_pred_df.plot(ax=ax, facecolor=None, edgecolor="black")
