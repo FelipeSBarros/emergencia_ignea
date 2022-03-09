@@ -46,10 +46,10 @@ def pred_incendio(weather_data):
         # index = 0
         # incendios_pred_df.loc[ind, ['temp']] = round(hora.get('temp') - 273.15, 2)
         if index > 0:
-            data.update(
+            weather_data.update(
                 pred_new_coords(
-                    lon=data.get('lon'),
-                    lat=data.get('lat'),
+                    lon=weather_data.get('lon'),
+                    lat=weather_data.get('lat'),
                     d=3.600,
                     wind_deg=hora.get('wind_deg')
                 ))
@@ -66,8 +66,8 @@ def pred_incendio(weather_data):
                         # todo considerar desplazamiento a cada hora/itercao
                         'viento_rafaga': hora.get('wind_gust') * 3600,  # todo idem
                         'humedad': hora.get('humidity'),
-                        'lon': data['lon'],
-                        'lat': data['lat'],
+                        'lon': weather_data['lon'],
+                        'lat': weather_data['lat'],
                     }
                 ])
             ]
