@@ -7,7 +7,9 @@ cligj==0.7.2
 cycler==0.11.0
 Fiona==1.8.21
 fonttools==4.29.1
+geographiclib==1.52
 geopandas==0.10.2
+geopy==2.2.0
 idna==3.3
 kiwisolver==1.3.2
 matplotlib==3.5.1
