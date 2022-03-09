@@ -102,3 +102,7 @@ def predict_area():
     # incendios_pred_df.plot(ax=ax, facecolor=None, edgecolor="black")
     # incendios_pred_df['geometry'].plot(ax=ax, markersize=.5, color='black')
     # plt.show();
+
+
+if __name__ == '__main__':
+    predict_area()
