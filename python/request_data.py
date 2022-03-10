@@ -1,14 +1,11 @@
 import io
-from datetime import datetime
 
 import geopandas as gpd
 import pandas as pd
-# from decouple import config
 import requests
 from geopandas import GeoDataFrame
 from geopandas import read_file  # todo confirmar se precisa importar
 
-# NASA_KEY = config('NASA_KEY', default='')
 
 urls = ['https://firms.modaps.eosdis.nasa.gov/data/active_fire/modis-c6.1/csv/MODIS_C6_1_South_America_24h.csv',
         'https://firms.modaps.eosdis.nasa.gov/data/active_fire/suomi-npp-viirs-c2/csv/SUOMI_VIIRS_C2_South_America_24h.csv',
@@ -51,7 +48,7 @@ def get_misiones_data():
     df = pd.concat([get_data(i) for i in urls])
     df_cleaned = clean_data(df)
     if not df_cleaned.empty:
-        df_cleaned.to_file(f'./datos/incendios_misiones_{datetime.today().date()}.geojson')
+        df_cleaned.to_file(f'./datos/incendios_misiones.geojson')
 
 
 if __name__ == '__main__':

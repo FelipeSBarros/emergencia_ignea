@@ -7,7 +7,7 @@ import requests
 from decouple import config
 
 OWM_KEY = config('OWM_KEY')
-incendios = glob(f'./datos/incendios_misiones_{datetime.today().date()}.geojson')[0]
+incendios = glob(f'./datos/incendios_misiones.geojson')[0]
 
 
 def pred_new_coords(lat, lon, d, wind_deg):
@@ -63,8 +63,7 @@ def pred_incendio(weather_data):
                         'hora': datetime.utcfromtimestamp(hora.get('dt')).strftime('%H:%M:%S'),
                         'viento_dir': hora.get('wind_deg'),
                         'viento_vel': hora.get('wind_speed') * 3600,
-                        # todo considerar desplazamiento a cada hora/itercao
-                        'viento_rafaga': hora.get('wind_gust') * 3600,  # todo idem
+                        'viento_rafaga': hora.get('wind_gust') * 3600,
                         'humedad': hora.get('humidity'),
                         'lon': weather_data['lon'],
                         'lat': weather_data['lat'],
@@ -74,10 +73,13 @@ def pred_incendio(weather_data):
         )
 
     weather_gdf = gpd.GeoDataFrame(weather_df,
-                                   geometry=gpd.points_from_xy(weather_df['lon'], weather_df['lat'], crs="EPSG:4326"))
+                                   geometry=gpd.points_from_xy(
+                                       weather_df['lon'],
+                                       weather_df['lat'],
+                                       crs="EPSG:4326"))
     weather_gdf['geometry_buffer'] = weather_gdf.to_crs("EPSG:5349").buffer(
-        distance=weather_gdf['viento_vel'].astype(float), resolution=16).to_crs("EPSG:4326")
-    # single feature with multipart geometries
+        distance=weather_gdf['viento_vel'].astype(float),
+        resolution=16).to_crs("EPSG:4326")
     return gpd.tools.collect(weather_gdf['geometry_buffer'])
 
 
@@ -96,12 +98,8 @@ def predict_area():
 
     incendios_pred_df = incendios_pred_df.set_geometry('buffer_pred')
     incendios_pred_df = incendios_pred_df.drop('geometry', 1)
-    incendios_pred_df.to_file(f'./datos/prediccion_incendios{datetime.today().date()}.geojson')
-    # import matplotlib.pyplot as plt
-    # fig, ax = plt.subplots()
-    # incendios_pred_df.plot(ax=ax, facecolor=None, edgecolor="black")
-    # incendios_pred_df['geometry'].plot(ax=ax, markersize=.5, color='black')
-    # plt.show();
+    incendios_pred_df = incendios_pred_df.dissolve('index')
+    incendios_pred_df.to_file(f'./datos/prediccion_incendios.geojson')
 
 
 if __name__ == '__main__':
