@@ -1,3 +1,4 @@
+import logging
 from datetime import datetime
 from glob import glob
 
@@ -7,7 +8,6 @@ import requests
 from decouple import config
 
 OWM_KEY = config('OWM_KEY')
-incendios = glob(f'./datos/incendios_misiones.geojson')[0]
 
 
 def pred_new_coords(lat, lon, d, wind_deg):
@@ -84,22 +84,27 @@ def pred_incendio(weather_data):
 
 
 def predict_area():
-    incendios_df = gpd.read_file(incendios)
-    incendios_pred_df = incendios_df.copy()
-    incendios_pred_df['buffer_pred'] = None
-    for ind in incendios_pred_df.index:
-        # ind = incendios_pred_df.index[0]
-        lat = incendios_df['latitude'][ind]
-        lon = incendios_df['longitude'][ind]
-        url = f'https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&mode=metric&exclude=[current, minutely, daily, alerts]&lang=es&appid={OWM_KEY}'
-        resp = requests.get(url=url)
-        data = resp.json()
-        incendios_pred_df['buffer_pred'][ind] = pred_incendio(data)
+    try:
+        incendios = glob(f'./datos/incendios_misiones.geojson')[0]
+        incendios_df = gpd.read_file(incendios)
+    except IndexError:
+        logging.warning("incendios_misiones.geojson no existente. Probablemente no haya incendios en Misiones")
+    else:
+        incendios_pred_df = incendios_df.copy()
+        incendios_pred_df['buffer_pred'] = None
+        for ind in incendios_pred_df.index:
+            # ind = incendios_pred_df.index[0]
+            lat = incendios_df['latitude'][ind]
+            lon = incendios_df['longitude'][ind]
+            url = f'https://api.openweathermap.org/data/2.5/onecall?lat={lat}&lon={lon}&mode=metric&exclude=[current, minutely, daily, alerts]&lang=es&appid={OWM_KEY}'
+            resp = requests.get(url=url)
+            data = resp.json()
+            incendios_pred_df['buffer_pred'][ind] = pred_incendio(data)
 
-    incendios_pred_df = incendios_pred_df.set_geometry('buffer_pred')
-    incendios_pred_df = incendios_pred_df.drop('geometry', 1)
-    incendios_pred_df = incendios_pred_df.dissolve('index')
-    incendios_pred_df.to_file(f'./datos/prediccion_incendios.geojson')
+        incendios_pred_df = incendios_pred_df.set_geometry('buffer_pred')
+        incendios_pred_df = incendios_pred_df.drop('geometry', 1)
+        incendios_pred_df = incendios_pred_df.dissolve('index')
+        incendios_pred_df.to_file(f'./datos/prediccion_incendios.geojson')
 
 
 if __name__ == '__main__':

@@ -1,4 +1,6 @@
 import io
+import logging
+import sys
 
 import geopandas as gpd
 import pandas as pd
@@ -18,6 +20,7 @@ def get_data(url):
     :param url:
     :return: pd.DataFrame
     """
+    logging.info("Retrieving data")
     url_content = requests.get(url)
     file_name = url.split('/')[5]
     url_data = url_content.content
@@ -28,28 +31,39 @@ def get_data(url):
 
 
 def filter_misiones(to_filter):
+    logging.info("Filtering fires")
     misiones = read_file("./datos/misiones.geojson")
     data_misiones = to_filter.sjoin(misiones)
     return data_misiones
 
 
 def clean_data(incendios_df):
+    # incendios_df = df
+    logging.info("Data cleaning")
     incendios_df = GeoDataFrame(data=incendios_df,
                                 geometry=gpd.points_from_xy(
                                     incendios_df.longitude,
                                     incendios_df.latitude),
                                 crs=4326)
     incendios_cleaned = filter_misiones(incendios_df)
-    incendios_cleaned = incendios_cleaned.reset_index()
-    return incendios_cleaned
+    if incendios_cleaned.empty:
+        logging.info("Misiones sin incendios activos")
+        sys.exit()
+
+    else:
+        incendios_cleaned = incendios_cleaned.reset_index()
+        return incendios_cleaned
 
 
 def get_misiones_data():
     df = pd.concat([get_data(i) for i in urls])
     df_cleaned = clean_data(df)
     if not df_cleaned.empty:
-        df_cleaned.to_file(f'./datos/incendios_misiones.geojson')
+        logging.info("Saving file")
+        df_cleaned.to_file('./datos/incendios_misiones.geojson')
 
 
 if __name__ == '__main__':
+    logging.basicConfig()
+    logging.getLogger().setLevel(logging.INFO)
     get_misiones_data()
