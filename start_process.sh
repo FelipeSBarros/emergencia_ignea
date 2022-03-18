@@ -3,8 +3,6 @@
 cd emergencia_ignea/
 # activa el ambiente virtual
 source .venv/bin/activate
-# excluye datos antiguos de incendio
-rm ./datos/incendios_misiones.geojson
 # ejecuta o request data
 python python/request_data.py
 # excluye datos antiguos de prediccion

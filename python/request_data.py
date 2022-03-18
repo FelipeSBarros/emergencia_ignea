@@ -1,3 +1,4 @@
+from os import path, remove
 import io
 import logging
 import sys
@@ -56,11 +57,14 @@ def clean_data(incendios_df):
 
 
 def get_misiones_data():
+    result = './datos/incendios_misiones.geojson'
     df = pd.concat([get_data(i) for i in urls])
     df_cleaned = clean_data(df)
     if not df_cleaned.empty:
+        if path.exists(result):
+            remove(result)
         logging.info("Saving file")
-        df_cleaned.to_file('./datos/incendios_misiones.geojson')
+        df_cleaned.to_file(result)
 
 
 if __name__ == '__main__':
