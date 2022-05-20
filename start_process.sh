@@ -1,12 +1,14 @@
 #! /bin/bash
 # acceder a la carpeta del proyecto
-cd emergencia_ignea/
+# cd emergencia_ignea/
 # activa el ambiente virtual
+cd /var/www/html/mapas/emergencia/python
 source .venv/bin/activate
 # ejecuta o request data
-python3 python/request_data.py
+rm ../datos/incendios_misiones.geojson
+python3 request_data.py
+# excluye datos antiguos de prediccion
 # ejecuta prediccion
-python3 python/predict_area.py
+#python3 predict_area.py
 # sai do venv
-deactivate
-echo "fim"
+.venv/bin/deactivate
